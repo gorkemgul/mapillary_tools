@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+OS=osx
+
+# build
+mkdir -p dist
+rm -rf dist/${OS}
+pyinstaller --version
+pyinstaller --noconfirm --distpath dist/${OS} mapillary_tools.spec
+
+# check
+SOURCE=dist/${OS}/mapillary_tools.app/Contents/MacOS/mapillary_tools
+$SOURCE --version
+VERSION=$($SOURCE --version | awk '{print $3}')
+ARCH=$(uname -m)
+TARGET=dist/releases/mapillary_tools-${VERSION}-${OS}-${ARCH}.zip
+
+# package
+mkdir -p dist/releases
+zip -j "$TARGET" "$SOURCE" README_osx_package.txt
+
+# sha256
+TARGET_BASENAME=$(basename "$TARGET")
+# to produce "HASH mapillary_toos" instead of "HASH dist/releases/mapillary_tools"
+cd dist/releases
+shasum -a256 "$TARGET_BASENAME" | tee "${TARGET_BASENAME}.sha256.txt"
+cd ../../
+
+# summary
+ls -l dist/releases
